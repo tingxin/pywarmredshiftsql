@@ -7,12 +7,6 @@ import random
 # 创建Redshift客户端
 client = boto3.client('redshift-data', region_name='ap-east-1')
 
-# 您的Redshift集群的集群标识符
-cluster_identifier = 'redshift-cluster-1'
-
-database = 'dev'
-db_user = 'demo'
-
 conf1 = {
     'cluster':'redshift-cluster-1',
     'db':'dev',
