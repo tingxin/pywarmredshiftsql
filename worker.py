@@ -9,6 +9,21 @@ client = boto3.client('redshift-data', region_name='ap-east-1')
 
 # 您的Redshift集群的集群标识符
 cluster_identifier = 'redshift-cluster-1'
+
+database = 'dev'
+db_user = 'demo'
+
+conf1 = {
+    'cluster':'redshift-cluster-1',
+    'db':'dev',
+    'user':'demo'
+}
+
+conf2 = {
+    'cluster':'redshift-cluster-1',
+    'db':'dev',
+    'user':'demo'
+}
 # =================================================================
 
 # 要执行的SQL查询
@@ -25,7 +40,7 @@ SKIP_STR = [item.lower() for item in [
             ]
 
 
-def query(querys, wait_result=False):
+def query(querys, conf:dict, wait_result=False):
     if wait_result:
         query_cache = dict()
     else:
@@ -33,9 +48,9 @@ def query(querys, wait_result=False):
 
     for sql_query in querys:
         response = client.execute_statement(
-            ClusterIdentifier=cluster_identifier,
-            Database='dev',  # 指定您的数据库名称
-            DbUser='demo',  # 指定数据库用户
+            ClusterIdentifier=conf['cluster'],
+            Database=conf['db'],  # 指定您的数据库名称
+            DbUser=conf['user'],  # 指定数据库用户
             Sql=sql_query
         )
         print(f"begin to run:\n {sql_query}")
@@ -111,10 +126,10 @@ def extract_query_patten(query_str:str):
     return query_str
 
 def warm_query(query_str_list):
-    query(query_str_list)
+    query(query_str_list, conf=conf2)
 
 def main():
-    result = query([base_sql], wait_result=True)
+    result = query([base_sql], conf=conf1, wait_result=True)
     warm_query_cache = dict()
     if result:
         for item in result[base_sql]:
