@@ -2,6 +2,7 @@ import boto3
 # 等待一段时间再继续检查查询状态
 import time
 import random
+import sqlparse
 
 # =======================需要修改===================================
 # 创建Redshift客户端
@@ -83,7 +84,6 @@ def query(querys, conf:dict, wait_result=False):
     result = dict()
     for query in query_cache:
         query_id = query_cache[query]
-        print(query_id)
         result = client.get_statement_result(Id=query_id)
         column_metadata = result['ColumnMetadata']
         data = result['Records']
@@ -113,11 +113,9 @@ def check_query(query_str):
             return False
     return True
 
-def extract_query_patten(query_str:str):
-    # 测试了sqlparse效果不佳
-    # 后续可能用多个正则来进行=值的替换
-    # 或者redshift中本身就有编译后的语句
-    return query_str
+def extract_query_patten(query_str:str)->str:
+    patten = sqlparse.run(query_str)
+    return patten
 
 def warm_query(query_str_list):
     query(query_str_list, conf=conf2)
@@ -125,6 +123,7 @@ def warm_query(query_str_list):
 def main():
     result = query([base_sql], conf=conf1, wait_result=True)
     warm_query_cache = dict()
+    need_run_sql = list()
     if result:
         for item in result[base_sql]:
             query_text = item[0].strip().lower()
@@ -132,9 +131,16 @@ def main():
                 continue
             
             query_patten = extract_query_patten(query_text)
-            warm_query_cache[query_patten] = True
+            if query_patten in warm_query_cache:
+                continue
 
-    warm_query(warm_query_cache.keys())
+            warm_query_cache[query_patten] = True
+            need_run_sql.append(query_text)
+
+    print(f"need to run {need_run_sql}")
+    # 直接执行首个符合patten的语句，而非使用PREPARE，原因是没法准确推断参数的数据类型
+    # 参考 https://docs.aws.amazon.com/redshift/latest/dg/r_PREPARE.html
+    warm_query(need_run_sql)
 
 main()
 
