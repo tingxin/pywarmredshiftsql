@@ -10,7 +10,7 @@ client = boto3.client('redshift-data', region_name='ap-east-1')
 
 conf1 = {
     'cluster':'redshift-cluster-1',
-    'db':'dev',
+    'db':'sample_data_dev',
     'user':'demo'
 }
 
@@ -23,16 +23,8 @@ conf2 = {
 
 # 要执行的SQL查询
 base_sql = """
-select querytxt from stl_query
-where label = 'default'
-order by starttime desc;
+select text from STL_QUERYTEXT
 """
-
-SKIP_STR = [item.lower() for item in [
-    'padb_fetch_sample',
-    'FROM STL_QUERY',
-    'from SYS_QUERY_HISTORY']
-            ]
 
 
 def query(querys, conf:dict, wait_result=False):
@@ -103,44 +95,22 @@ def query(querys, conf:dict, wait_result=False):
     return result
 
 
-def check_query(query_str):
-    query_text = query_str.strip().lower()
-    if not query_text.startswith('select'):
-        return False
-    
-    for skip in SKIP_STR:
-        if query_text.find(skip) >= 0:
-            return False
-    return True
-
-def extract_query_patten(query_str:str)->str:
-    patten = sqlparse.run(query_str)
-    return patten
-
 def warm_query(query_str_list):
     query(query_str_list, conf=conf2)
 
 def main():
     result = query([base_sql], conf=conf1, wait_result=True)
-    warm_query_cache = dict()
-    need_run_sql = list()
+
     if result:
-        for item in result[base_sql]:
-            query_text = item[0].strip().lower()
-            if not check_query(query_text):
-                continue
-            
-            query_patten = extract_query_patten(query_text)
-            if query_patten in warm_query_cache:
-                continue
+        print(f"found total {len(result[base_sql])} need to analyse")
+        warm_query_cache = sqlparse.analyse(result[base_sql])
 
-            warm_query_cache[query_patten] = True
-            need_run_sql.append(query_text)
-
-    print(f"need to run {need_run_sql}")
-    # 直接执行首个符合patten的语句，而非使用PREPARE，原因是没法准确推断参数的数据类型
-    # 参考 https://docs.aws.amazon.com/redshift/latest/dg/r_PREPARE.html
-    warm_query(need_run_sql)
+        print(f"found {len(warm_query_cache)} pattens")
+        # for key in warm_query_cache:
+        #     print(f"need to run patten:\n{key}\nsql:\n{warm_query_cache[key]}\n")
+        # 直接执行首个符合patten的语句，而非使用PREPARE，原因是没法准确推断参数的数据类型
+        # 参考 https://docs.aws.amazon.com/redshift/latest/dg/r_PREPARE.html
+        # warm_query(warm_query_cache.values())
 
 main()
 

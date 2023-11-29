@@ -31,3 +31,6 @@ conf2 = {
 ```
 python3 worker.py
 ```
+
+## 注意
+1.不支持sql中包含注释，及和sql运行无关的必要内容
