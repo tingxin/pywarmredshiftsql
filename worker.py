@@ -121,7 +121,7 @@ def main():
         print(f"found {len(warm_query_cache)} pattens")
         # 直接执行首个符合patten的语句，而非使用PREPARE，原因是没法准确推断参数的数据类型
         # 参考 https://docs.aws.amazon.com/redshift/latest/dg/r_PREPARE.html
-        # warm_query(warm_query_cache.values())
+        warm_query(warm_query_cache.values())
 
 main()
 
