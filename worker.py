@@ -23,7 +23,17 @@ conf2 = {
 
 # 要执行的SQL查询
 base_sql = """
-select text from STL_QUERYTEXT
+SELECT query_text from SYS_QUERY_HISTORY 
+where status= 'success'
+and error_message = ''
+and query_type = 'SELECT'
+and compile_time > 0
+and query_text not like '%SYS_%'
+and query_text not like '%STL_%'
+and query_text not like '%stv_%'
+and query_text not like '%stl_%'
+and query_text not like '-- start%'
+order by start_time desc
 """
 
 
@@ -105,9 +115,10 @@ def main():
         print(f"found total {len(result[base_sql])} need to analyse")
         warm_query_cache = sqlparse.analyse(result[base_sql])
 
+        
+        for key in warm_query_cache:
+            print(f"need to run patten:\n{key}\nsql:\n{warm_query_cache[key]}\n")
         print(f"found {len(warm_query_cache)} pattens")
-        # for key in warm_query_cache:
-        #     print(f"need to run patten:\n{key}\nsql:\n{warm_query_cache[key]}\n")
         # 直接执行首个符合patten的语句，而非使用PREPARE，原因是没法准确推断参数的数据类型
         # 参考 https://docs.aws.amazon.com/redshift/latest/dg/r_PREPARE.html
         # warm_query(warm_query_cache.values())

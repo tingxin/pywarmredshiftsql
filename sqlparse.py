@@ -3,15 +3,7 @@ from sqlglot import parse_one, exp
 _SKIP_STR = [item.lower() for item in [
     'padb_fetch_sample',
     'from pg_catalog',
-    'STL_',
-    'SYS_',
-    'SVV_',
-    'STV_',
-    'COPY',
-    'pg_internal',
-    'CREATE TEMPORARY TABLE',
-    'create temp table',
-    'CREATE TABLE']
+    'pg_internal']
             ]
 
 def _check_query(query_str):
