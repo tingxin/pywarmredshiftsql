@@ -14,11 +14,11 @@ def _check_query(query_str):
             return False
     return True
 
-def analyse_one(sql: str) -> str:
+def analyse_one(sql: str):
     try:
-        parser = parse_one(sql)
+        parser = parse_one(sql, dialect="postgres")
     except Exception as ex:
-        return ""
+        return "", f"SQL:\n{sql}\nERROR:{ex}\n"
 
     format_sql = str(parser)
     parts = list()
@@ -34,22 +34,23 @@ def analyse_one(sql: str) -> str:
     for item in parts:
         format_sql = format_sql.replace(item[0], item[1])
 
-    return format_sql
+    return format_sql, ""
 
-def analyse(sqls:list)->dict:
+def analyse(sqls:list):
     warm_query_cache = dict()
-
+    errors = list()
     for item in sqls:
         query_text = item.strip().lower()
         if not _check_query(query_text):
             continue
             
-        query_patten = analyse_one(query_text)
+        query_patten,error = analyse_one(query_text)
         if query_patten == "":
+            errors.append(error)
             continue
         
         if query_patten in warm_query_cache:
             continue
 
         warm_query_cache[query_patten] = query_text
-    return warm_query_cache
+    return warm_query_cache, errors

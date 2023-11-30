@@ -2,6 +2,9 @@ import psycopg2
 import time
 import random
 import sqlparse
+import os
+from datetime import datetime
+import pytz
 
 ###########################需要修改的地方##############
 
@@ -79,7 +82,7 @@ def execute(sqls:list, conf:dict):
             conn.commit()
             success +=1
         except Exception as ex:
-            print(f"ERROR:\n{sql}\n{ex}")
+            print(f"EXECUTE ERROR:\n{sql}\n{ex}")
             continue
         finally:
             cursor.close()
@@ -87,6 +90,19 @@ def execute(sqls:list, conf:dict):
 
     print(f"成功执行{success}")
 
+def get_curent_time():
+    # 设置时区为北京时间
+    beijing_tz = pytz.timezone('Asia/Shanghai')
+
+    # 获取当前时间
+    current_time_utc = datetime.utcnow()
+
+    # 将当前时间转换为北京时间
+    current_time_beijing = current_time_utc.replace(tzinfo=pytz.utc).astimezone(beijing_tz)
+
+    # 格式化输出当前时间（带时分秒）
+    formatted_time = current_time_beijing.strftime('%Y-%m-%d_%H_%M_%S')
+    return formatted_time
 
 def main():
     result = query(base_sql, conf1)
@@ -94,8 +110,13 @@ def main():
 
     if result:
         print(f"found total {len(result)} need to analyse")
-        warm_query_cache = sqlparse.analyse(result)
-
+        warm_query_cache, errors = sqlparse.analyse(result)
+        current_time = get_curent_time()
+        
+        if len(errors) > 0:
+            print(f"total error sql:{len(errors)}")
+            with open(f'{os.getpwd()}/{current_time}_errors.txt', mode='w') as f:
+                f.writelines(errors)
         
         for key in warm_query_cache:
             print(f"need to run patten:\n{key}\nsql:\n{warm_query_cache[key]}\n")
