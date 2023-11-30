@@ -7,7 +7,6 @@ _SKIP_STR = [item.lower() for item in [
             ]
 
 def _check_query(query_str):
-    print(len(query_str.split(' ')))
     if len(query_str.split(' ')) < 4:
         return False    
     for skip in _SKIP_STR:
