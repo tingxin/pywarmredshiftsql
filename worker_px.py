@@ -16,7 +16,7 @@ conf1 = {
 
 conf2 = {
     'host':'redshift-cluster-1.csqf0eych7mz.ap-northeast-1.redshift.amazonaws.com',
-    'db':'dev',
+    'db':'sample_data_dev',
     'user':'demo',
     'password':'Demo1234',
     'port':'5439'
@@ -69,24 +69,23 @@ def query(sql:str, conf:dict):
     return result
 
 def execute(sqls:list, conf:dict):
-    try:
-        conn = get_conn(conf)
-        # 创建一个游标对象
-        cursor = conn.cursor()
-        for sql in sqls:
-            try:
-                cursor.execute(sql)
-            except Exception as e:
-                print(e)
-                continue
-    except Exception as ex:
-        print(ex)
-    finally:
-        conn.commit()
-        cursor.close()
-        conn.close()
+    success = 0
+    for sql in sqls:
+        try:
+            conn = get_conn(conf)
+            # 创建一个游标对象
+            cursor = conn.cursor()
+            cursor.execute(sql)
+            conn.commit()
+            success +=1
+        except Exception as ex:
+            print(f"ERROR:\n{sql}\n{ex}")
+            continue
+        finally:
+            cursor.close()
+            conn.close()
 
-
+    print(f"成功执行{success}")
 
 
 def main():
