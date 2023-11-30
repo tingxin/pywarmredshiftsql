@@ -7,6 +7,7 @@ _SKIP_STR = [item.lower() for item in [
             ]
 
 def _check_query(query_str):
+    print(len(query_str.split(' ')))
     if len(query_str.split(' ')) < 4:
         return False    
     for skip in _SKIP_STR:
@@ -38,8 +39,9 @@ def analyse_one(sql: str) -> str:
 
 def analyse(sqls:list)->dict:
     warm_query_cache = dict()
+
     for item in sqls:
-        query_text = item[0].strip().lower()
+        query_text = item.strip().lower()
         if not _check_query(query_text):
             continue
             
